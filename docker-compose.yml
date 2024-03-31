@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    environment:
+      ALLOW_ANONYMOUS_LOGIN: "yes"
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: bitnami/kafka:latest
+    environment:
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+
+  database:
+    image: postgres:latest
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - ~/pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "$DB_USER", "-d", "$DB_NAME" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  orders:
+    build: ./path/to/your/orders/Dockerfile # Replace with your application's Dockerfile location
+    environment:
+      DB_HOST: database
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_NAME: ordersdb
+      KAFKA_BROKER_URL: kafka:9092
+    ports:
+      - "4000:4000"
+    depends_on:
+      - kafka
+      - database
+
+  notifier:
+    build: ./path/to/your/notifier/Dockerfile # Replace with your application's Dockerfile location
+    environment:
+      KAFKA_BROKER_URL: kafka:9092
+    ports:
+      - "4001:4001"
+    depends_on:
+      - kafka
+
+volumes:
+  pg_data:
