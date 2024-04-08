@@ -39,8 +39,10 @@ services:
       timeout: 5s
       retries: 5
 
-  orders:
-    build: ${DOCKER_IMAGE_ORDERS} # Replace with your application's Dockerfile location
+  orders: &orders
+    profiles:
+      - remote
+    image: synthao/orders:latest
     environment:
       DB_HOST: ${DB_HOST}
       DB_USER: ${DB_USER}
@@ -55,14 +57,28 @@ services:
       kafka:
         condition: service_started
 
-  notifier:
-    build: ${DOCKER_IMAGE_NOTIFIER} # Replace with your application's Dockerfile location
+  notifier: &notifier
+    profiles:
+      - remote
+    image: synthao/notifier:latest
     environment:
       KAFKA_BROKER_URL: kafka:9092
     ports:
       - "4001:4001"
     depends_on:
       - kafka
+
+  orders-local:
+    <<: *orders
+    profiles:
+      - local
+    build: ${DOCKER_IMAGE_ORDERS}
+
+  notifier-local:
+    <<: *notifier
+    profiles:
+      - local
+    build: ${DOCKER_IMAGE_NOTIFIER}
 
 volumes:
   zookeeper_data:
