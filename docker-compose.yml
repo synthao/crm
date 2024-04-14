@@ -48,7 +48,9 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
-      KAFKA_BROKER_URL: kafka:9092
+      KAFKA_ADDRESS: ${KAFKA_ADDRESS}
+      KAFKA_TOPIC: ${KAFKA_TOPIC}
+      KAFKA_GROUP_ID: ${KAFKA_GROUP_ID}
     ports:
       - "4000:4000"
     depends_on:
@@ -62,7 +64,10 @@ services:
       - remote
     image: synthao/notifier:latest
     environment:
-      KAFKA_BROKER_URL: kafka:9092
+      APP_NAME_NOTIFIER: ${APP_NAME_NOTIFIER}
+      KAFKA_ADDRESS: ${KAFKA_ADDRESS}
+      KAFKA_TOPIC: ${KAFKA_TOPIC}
+      KAFKA_GROUP_ID: ${KAFKA_GROUP_ID}
     ports:
       - "4001:4001"
     depends_on:
