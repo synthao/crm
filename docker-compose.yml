@@ -23,18 +23,35 @@ services:
     depends_on:
       - zookeeper
 
-  database:
+  database_orders:
     image: postgres:latest
     environment:
-      - POSTGRES_DB=${DB_NAME}
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_ORDERS_NAME}
+      - POSTGRES_USER=${DB_ORDERS_USER}
+      - POSTGRES_PASSWORD=${DB_ORDERS_PASSWORD}
     volumes:
-      - ${PG_DATA}:/var/lib/postgresql/data
+      - ${DB_ORDERS_VOLUME_PATH}:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: [ "CMD", "pg_isready", "-U", "$DB_USER", "-d", "$DB_NAME" ]
+      test: [ "CMD", "pg_isready", "-U", "$DB_ORDERS_USER", "-d", "$DB_ORDERS_NAME" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  database_users:
+    container_name: database_users
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: ${DB_USERS_NAME}
+      POSTGRES_USER: ${DB_USERS_USER}
+      POSTGRES_PASSWORD: ${DB_USERS_PASSWORD}
+    volumes:
+      - ${DB_USERS_VOLUME_PATH}:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "$DB_USERS_USER", "-d", "$DB_USERS_NAME" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -44,17 +61,17 @@ services:
       - remote
     image: synthao/orders:latest
     environment:
-      DB_HOST: ${DB_HOST}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_NAME: ${DB_NAME}
+      DB_HOST: ${DB_ORDERS_HOST}
+      DB_USER: ${DB_ORDERS_USER}
+      DB_PASSWORD: ${DB_ORDERS_PASSWORD}
+      DB_NAME: ${DB_ORDERS_NAME}
       KAFKA_ADDRESS: ${KAFKA_ADDRESS}
       KAFKA_TOPIC: ${KAFKA_TOPIC}
       KAFKA_GROUP_ID: ${KAFKA_GROUP_ID}
     ports:
       - "4000:4000"
     depends_on:
-      database:
+      database_orders:
         condition: service_healthy
       kafka:
         condition: service_started
@@ -73,17 +90,38 @@ services:
     depends_on:
       - kafka
 
+  users: &users
+    profiles:
+      - remote
+    image: synthao/users:latest
+    environment:
+      DB_HOST: ${DB_USERS_HOST}
+      DB_USER: ${DB_USERS_USER}
+      DB_PASSWORD: ${DB_USERS_PASSWORD}
+      DB_NAME: ${DB_USERS_NAME}
+    ports:
+      - "4002:4002"
+    depends_on:
+      database_users:
+        condition: service_healthy
+
   orders-local:
     <<: *orders
     profiles:
       - local
-    build: ${DOCKER_IMAGE_ORDERS}
+    build: ${DOCKER_IMAGE_USERS}
 
   notifier-local:
     <<: *notifier
     profiles:
       - local
     build: ${DOCKER_IMAGE_NOTIFIER}
+
+  users-local:
+    <<: *users
+    profiles:
+      - local
+    build: ${DOCKER_IMAGE_USERS}
 
 volumes:
   zookeeper_data:
