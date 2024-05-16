@@ -24,6 +24,9 @@ services:
       - zookeeper
 
   database_orders:
+    env_file:
+      - .env
+    container_name: database_orders
     image: postgres:latest
     environment:
       - POSTGRES_DB=${DB_ORDERS_NAME}
@@ -59,6 +62,7 @@ services:
   orders: &orders
     profiles:
       - remote
+    container_name: orders
     image: synthao/orders:latest
     environment:
       DB_HOST: ${DB_ORDERS_HOST}
@@ -79,6 +83,7 @@ services:
   notifier: &notifier
     profiles:
       - remote
+    container_name: notifier
     image: synthao/notifier:latest
     environment:
       APP_NAME_NOTIFIER: ${APP_NAME_NOTIFIER}
@@ -93,6 +98,7 @@ services:
   users: &users
     profiles:
       - remote
+    container_name: users
     image: synthao/users:latest
     environment:
       DB_HOST: ${DB_USERS_HOST}
@@ -107,18 +113,25 @@ services:
 
   orders-local:
     <<: *orders
+    env_file:
+      - .env
+    container_name: orders_local
     profiles:
       - local
-    build: ${DOCKER_IMAGE_USERS}
+    build: ${DOCKER_IMAGE_ORDERS}
 
   notifier-local:
     <<: *notifier
+    container_name: notifier_local
     profiles:
       - local
     build: ${DOCKER_IMAGE_NOTIFIER}
 
   users-local:
     <<: *users
+    env_file:
+      - .env
+    container_name: users_local
     profiles:
       - local
     build: ${DOCKER_IMAGE_USERS}
