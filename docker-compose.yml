@@ -111,6 +111,22 @@ services:
       database_users:
         condition: service_healthy
 
+  sso: &sso
+    profiles:
+      - remote
+    container_name: sso
+    image: synthao/sso:latest
+    environment:
+      DB_HOST: ${DB_USERS_HOST}
+      DB_USER: ${DB_USERS_USER}
+      DB_PASSWORD: ${DB_USERS_PASSWORD}
+      DB_NAME: ${DB_USERS_NAME}
+    ports:
+      - "50051:50051"
+    depends_on:
+      database_users:
+        condition: service_healthy
+
   orders-local:
     <<: *orders
     env_file:
@@ -135,6 +151,15 @@ services:
     profiles:
       - local
     build: ${DOCKER_IMAGE_USERS}
+
+  sso-local:
+    <<: *sso
+    env_file:
+      - .env
+    container_name: sso_local
+    profiles:
+      - local
+    build: ${DOCKER_IMAGE_SSO}
 
 volumes:
   zookeeper_data:
