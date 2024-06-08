@@ -69,9 +69,13 @@ services:
       DB_USER: ${DB_ORDERS_USER}
       DB_PASSWORD: ${DB_ORDERS_PASSWORD}
       DB_NAME: ${DB_ORDERS_NAME}
+      DB_PORT: ${DB_ORDERS_PORT}
       KAFKA_ADDRESS: ${KAFKA_ADDRESS}
       KAFKA_TOPIC: ${KAFKA_TOPIC}
       KAFKA_GROUP_ID: ${KAFKA_GROUP_ID}
+      PORT: ${ORDERS_SERVICE_PORT}
+      SSO_HOST: ${ORDERS_SERVICE_SSO_HOST}
+      SSO_PORT: ${ORDERS_SERVICE_SSO_PORT}
     ports:
       - "4000:4000"
     depends_on:
@@ -86,6 +90,7 @@ services:
     container_name: notifier
     image: synthao/notifier:latest
     environment:
+      GOMEMLIMIT: "100MiB"
       APP_NAME_NOTIFIER: ${APP_NAME_NOTIFIER}
       KAFKA_ADDRESS: ${KAFKA_ADDRESS}
       KAFKA_TOPIC: ${KAFKA_TOPIC}
@@ -94,6 +99,10 @@ services:
       - "4001:4001"
     depends_on:
       - kafka
+    deploy:
+      resources:
+        limits:
+          memory: 95M
 
   users: &users
     profiles:
